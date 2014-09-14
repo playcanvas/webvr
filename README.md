@@ -16,6 +16,8 @@ Currently you will need to install [vr.js](https://github.com/benvanik/vr.js/tre
 
 See the [Halloween VR](http://playcanvas.com/dave/halloween-vr) project
 
-## TODO:
+## KNOWN ISSUES
 
-* Support [Firefox VR](http://blog.bitops.com/blog/2014/06/26/first-steps-for-vr-on-the-web/) & [Chrome VR](http://blog.tojicode.com/2014/07/bringing-vr-to-chrome.html) builds
+- This uses the posteffect_oculus.js (a PlayCanvas fullscreen effect) to do the distortion. Chrome/FF WebVR builds will apply the distortion for you if you get a VR context to the canvas.
+- The distortion is hard-coded for Oculus Rift DK2
+- pc.input.HMD doesn't get the position data from DK2
