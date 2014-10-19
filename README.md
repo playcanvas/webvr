@@ -4,18 +4,19 @@ This project contains the files you'll need to convert your PlayCanvas game to r
 
 ## Requirements
 
-Currently you will need to install [vr.js](https://github.com/benvanik/vr.js/tree/master).
+Currently this requires a special build of [Chrome](http://blog.tojicode.com/2014/07/bringing-vr-to-chrome.html) or [Firefox](http://blog.bitops.com/blog/2014/08/20/updated-firefox-vr-builds/)
 
 ## How to use
 
-1. On the root Entity of your PlayCanvas Pack add a script component and add the `vr.js` script and the `input_hmd.js` script (in that order)
-2. On the Entity with your Camera Component add `posteffect_oculus.js` and `oculus_camera.js` (in that order)
+1. On the root Entity of your PlayCanvas Pack add a script component and add the `input_hmd.js` script.
+2. On the Entity with your Camera Component add `oculus_camera.js`
 3. Run the game
 
 ## Example
 
 See the [Halloween VR](http://playcanvas.com/dave/halloween-vr) project
 
-## TODO:
+## KNOWN ISSUES
 
-* Support [Firefox VR](http://blog.bitops.com/blog/2014/06/26/first-steps-for-vr-on-the-web/) & [Chrome VR](http://blog.tojicode.com/2014/07/bringing-vr-to-chrome.html) builds
+- Not sure separation and FOV is handled entirely correctly
+- We don't currently handle input from another device (e.g. mouse) and HMD
