@@ -5,37 +5,19 @@ pc.script.create("oculus_camera", function (context) {
         this.entity = entity;
 
         this.ready = false;
-        this.enabled = true;
 
         this.offsetRotation = new pc.Quat();
+        this.separation = 0;
 
         this.left = this.entity;
         this.right = new pc.fw.Entity();
 
-        this.hmd = new pc.input.HMD();
+        this.hmd = new pc.input.Hmd(context.graphicsDevice);
         this.hmd.initialize().then(function () {
             this.ready = true;
-            this.info = this.hmd.getHmdInfo();
-            this.hmdInitialize();
-
+            this._hmdInitialize();
         }.bind(this), function (err) {
-            console.warn("Failed to initialize Oculus Rift");
-
-            this.ready = true;
-            this.hmd = null;
-            this.info = {
-                hResolution: 1280,
-                vResolution: 800,
-                hScreenSize: 0.14976,
-                vScreenSize: 0.0936,
-                interpupillaryDistance: 0.064,
-                lensSeparationDistance: 0.064,
-                eyeToScreenDistance: 0.041,
-                distortionK : [1.0, 0.22, 0.24, 0.0],
-                chromaAbCorrection: [ 0.996, -0.004, 1.014, 0.0]
-            };
-
-            this.hmdInitialize();
+            console.warn("Failed to initialize HMD");
         }.bind(this));
     };
 
@@ -44,49 +26,39 @@ pc.script.create("oculus_camera", function (context) {
             if (!this.left.camera) {
                 console.error("OculusCamera must be attached to a camera.")
             }
-
-            this.offsetRotation = this.entity.getRotation();
         },
 
-        hmdInitialize: function () {
-            var r = -1.0 - (4 * (this.info.hScreenSize/4 - this.info.lensSeparationDistance/2) / this.info.hScreenSize);
-            var distScale = (this.info.distortionK[0] + this.info.distortionK[1] * Math.pow(r,2) + this.info.distortionK[2] * Math.pow(r,4) + this.info.distortionK[3] * Math.pow(r,6));
-            var fov = 2 * Math.atan2(this.info.vScreenSize * distScale, 2 * this.info.eyeToScreenDistance) * pc.math.RAD_TO_DEG;
+        _hmdInitialize: function () {
+            this.separation = this.hmd._device.getEyeTranslation("left").x - this.hmd._device.getEyeTranslation("right").x;
 
             this.left.camera.rect = new pc.Vec4(0, 0, 0.5, 1);
-            this.left.camera.fov = fov;
+            this.left.camera.fov = this.hmd._device.getRecommendedEyeFieldOfView("left").upDegrees;
 
             context.systems.camera.addComponent(this.right, {
                 clearColor: this.left.camera.clearColor,
                 rect: new pc.Vec4(0.5, 0, 0.5, 1),
-                fov: fov
+                fov: this.hmd._device.getRecommendedEyeFieldOfView("right").upDegrees
             });
 
             // Add the new right camera to the parent
             this.left.getParent().addChild(this.right);
 
-            // Add oculus post effect
-            var lOculus = new pc.posteffect.Oculus(context.graphicsDevice, this.info, true);
-            var rOculus = new pc.posteffect.Oculus(context.graphicsDevice, this.info, false);
-
-            if (this.left.camera.postEffects.setRenderTargetScale) {
-                this.left.camera.postEffects.setRenderTargetScale(1.5);
-                this.right.camera.postEffects.setRenderTargetScale(1.5);
-            }
-
-            this.left.camera.postEffects.addEffect(lOculus);
-            this.right.camera.postEffects.addEffect(rOculus);
-
             // Tweak the projection matrix
-            var h = 4 * (this.info.hScreenSize/4 - this.info.interpupillaryDistance/2) / this.info.hScreenSize;
-            var posH = new pc.Mat4().setTranslate(h, 0, 0);
-            var negH = new pc.Mat4().setTranslate(-h, 0, 0);
+            // var h = 4 * (this.info.hScreenSize/4 - this.info.interpupillaryDistance/2) / this.info.hScreenSize;
+            // var posH = new pc.Mat4().setTranslate(h, 0, 0);
+            // var negH = new pc.Mat4().setTranslate(-h, 0, 0);
 
-            var lProj = this.left.camera.camera.getProjectionMatrix();
-            var rProj = this.right.camera.camera.getProjectionMatrix();
+            // var lProj = this.left.camera.camera.getProjectionMatrix();
+            // var rProj = this.right.camera.camera.getProjectionMatrix();
 
-            this.left.camera.camera._projMat = posH.mul(lProj);
-            this.right.camera.camera._projMat = negH.mul(lProj);
+            // this.left.camera.camera._projMat = posH.mul(lProj);
+            // this.right.camera.camera._projMat = negH.mul(lProj);
+
+            context.mouse.on("mousedown", function () {
+                if (!document.mozFullscreenElement && !document.fullscreenElement) {
+                    this.hmd.fullscreen();
+                }
+            }.bind(this));
         },
 
         update: function () {
@@ -96,29 +68,43 @@ pc.script.create("oculus_camera", function (context) {
 
             if (this.hmd) {
                 this.hmd.poll();
+
+                // var device = this.hmd._device;
+                // function trim (v) {
+                //     return [v.x.toFixed(2), v.y.toFixed(2), v.z.toFixed(2)];
+                // }
+                // pc.debug.display({
+                //     sep: this.separation,
+                //     pos: trim(this.hmd.position),
+                //     rot: trim(this.hmd.rotation),
+                //     lFov: device.getRecommendedEyeFieldOfView("left").upDegrees,
+                //     rFov: device.getRecommendedEyeFieldOfView("right").downDegrees,
+                //     lcFov: device.getCurrentEyeFieldOfView("left").upDegrees,
+                //     rcFov: device.getCurrentEyeFieldOfView("right").downDegrees,
+                //     lmFov: device.getMaximumEyeFieldOfView("left").upDegrees,
+                //     rmFov: device.getMaximumEyeFieldOfView("right").downDegrees,
+                //     lTrans: device.getEyeTranslation("left").x,
+                //     rTrans: device.getEyeTranslation("right").x
+                // });
             }
 
-            if (this.enabled && this.hmd) {
-                this.left.setRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
-                this.right.setRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
+            // get position and rotation from hmd
+            if (this.hmd) {
+                this.left.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
+                this.right.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
+
+                this.left.setLocalPosition(this.hmd.position);
             } else {
                 this.right.setRotation(this.left.getRotation());
             }
 
+            // set right camera to be offset to the side
             var pos = this.left.getPosition();
-            this.right.setPosition(pos.x + this.info.lensSeparationDistance/2, pos.y, pos.z);
+            this.right.setPosition(pos.x + this.separation, pos.y, pos.z);
         },
 
         setMouse: function (x, y) {
             this.offsetRotation.setFromEulerAngles(0, y, 0);
-        },
-
-        enable: function () {
-            this.enabled = true;
-        },
-
-        disable: function () {
-            this.enabled = false;
         }
     };
 
