@@ -77,15 +77,16 @@ pc.extend(pc.input, function () {
         * @description Request for the browser to enter fullscreen mode and begin renderin
         */
         enterFullscreen: function () {
-            var canvas = this._graphicsDevice.canvas
+            // var el = document.body;
+            var el = this._graphicsDevice.canvas;
 
             // watchout for camelcase weirdness
-            if (canvas.webkitRequestFullscreen) {
-                canvas.webkitRequestFullscreen({
+            if (el.webkitRequestFullscreen) {
+                el.webkitRequestFullscreen({
                     vrDisplay: this._device
                 });
-            } else if (canvas.mozRequestFullScreen) {
-                canvas.mozRequestFullScreen({
+            } else if (el.mozRequestFullScreen) {
+                el.mozRequestFullScreen({
                     vrDisplay: this._device
                 });
             }
@@ -106,7 +107,7 @@ pc.extend(pc.input, function () {
         get: function() {
             if (this._sensor) {
                 var ori;
-                if (this._vrstate.hasOrientation) {
+                if (this._vrstate.hasOrientation || this._vrstate.orientation) {
                     ori = this._vrstate.orientation;
                 } else {
                     ori = pc.Vec4.ZERO;
@@ -128,7 +129,7 @@ pc.extend(pc.input, function () {
         get: function () {
             if (this._sensor) {
                 var pos;
-                if (this._vrstate.hasPosition) {
+                if (this._vrstate.hasPosition || this._vrstate.position) {
                     pos = this._vrstate.position;
                 } else {
                     pos = pc.Vec3.ZERO;

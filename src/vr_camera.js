@@ -85,29 +85,39 @@ pc.script.create("vr_camera", function (context) {
         hmdInitialize: function () {
             this._separation = this.hmd._device.getEyeTranslation("left").x - this.hmd._device.getEyeTranslation("right").x;
 
-            context.mouse.on("mousedown", function () {
-                this.enterVR();
-            }.bind(this));
+            // context.mouse.on("mousedown", function () {
+            //     this.enterVR();
+            // }.bind(this));
         },
 
         enterVR: function () {
             if (!document.mozFullscreenElement && !document.fullscreenElement) {
+                var onFSChange = function () {
+                    if (!document.mozFullScreenElement && !document.fullscreenElement ) {
+                        this.leaveVR();
+                    }
+                }.bind(this);
+
                 this.hmd.enterFullscreen();
 
+                document.addEventListener( "fullscreenchange", onFSChange, false);
+
                 // using old format for the moment until Seemore updated
-                context.systems.camera.addComponent(this.right, {
-                    clearColor: this.left.camera.clearColor,
-                    rect: new pc.Vec4(0.5, 0, 0.5, 1),
-                    projection: pc.PROJECTION_VR
-                });
-                // hack to store VR FOV on camera object
-                this.right.camera.camera._vrFov = this.hmd._device.getRecommendedEyeFieldOfView("right");
+                if (!this.right.camera) {
+                    context.systems.camera.addComponent(this.right, {
+                        clearColor: this.left.camera.clearColor,
+                        rect: new pc.Vec4(0.5, 0, 0.5, 1),
+                        projection: pc.PROJECTION_VR
+                    });
+                    // hack to store VR FOV on camera object
+                    this.right.camera.camera._vrFov = this.hmd._device.getRecommendedEyeFieldOfView("right");
+                }
+                this.right.camera.enabled = true;
 
                 // set left camera to VR mode
                 this.left.camera.rect = new pc.Vec4(0, 0, 0.5, 1);
                 this.left.camera.projection = pc.PROJECTION_VR;
                 this.left.camera.camera._vrFov = this.hmd._device.getRecommendedEyeFieldOfView("left");
-
 
                 // if (this.left.camera && this.right.camera) {
                 //     var rfov = this.hmd._device.getRecommendedEyeFieldOfView("right");
@@ -126,11 +136,12 @@ pc.script.create("vr_camera", function (context) {
             this.hmd.exitFullscreen();
 
             // using old format for the moment until Seemore updated
-            context.systems.camera.removeComponent(this.right);
+            // context.systems.camera.removeComponent(this.right);
+            this.right.camera.enabled = false;
 
             // set left/right viewport
             this.left.camera.rect = new pc.Vec4(0, 0, 1, 1);
-            this.left.camera.fov = 45;
+            this.left.camera.projection = pc.PROJECTION_PERSPECTIVE;
         },
 
         update: function () {
@@ -143,6 +154,9 @@ pc.script.create("vr_camera", function (context) {
             }
 
             if (this.enabled && this.hmd) {
+                this.left.getParent().getRotation();
+
+
                 // get rotation from hmd
                 this.left.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
                 this.right.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
@@ -181,9 +195,13 @@ pc.script.create("vr_camera", function (context) {
             // });
         },
 
-        setMouse: function (x, y) {
-            this.offsetRotation.setFromEulerAngles(0, y, 0);
+        setRotationOffset: function (x, y, z) {
+            this.offsetRotation.setFromEulerAngles(x, y, z);
         },
+
+        // setMouse: function (x, y) {
+        //     this.offsetRotation.setFromEulerAngles(0, y, 0);
+        // },
 
         enable: function () {
             this.enabled = true;
