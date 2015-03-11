@@ -26,8 +26,8 @@ pc.extend(pc.input, function () {
             var self = this;
             var p = null;
 
-            if (navigator.getVRDevices || navigator.mozGetVRDevices) {
-                p = new pc.promise.Promise(function (resolve, reject) {
+            p = new pc.promise.Promise(function (resolve, reject) {
+                if (navigator.getVRDevices || navigator.mozGetVRDevices) {
                     var enumerateVRDevices = function (devices) {
                         var i, n;
 
@@ -54,10 +54,10 @@ pc.extend(pc.input, function () {
                         navigator.mozGetVRDevices(enumerateVRDevices);
                     }
 
-                })
-            } else {
-                console.log("No HMD input method found.")
-            }
+                } else {
+                    reject("No HMD found")
+                }
+            });
 
             return p;
         },
@@ -76,7 +76,7 @@ pc.extend(pc.input, function () {
         * @name pc.input.Hmd#fullscreen
         * @description Request for the browser to enter fullscreen mode and begin renderin
         */
-        fullscreen: function () {
+        enterFullscreen: function () {
             var canvas = this._graphicsDevice.canvas
 
             // watchout for camelcase weirdness
@@ -89,6 +89,10 @@ pc.extend(pc.input, function () {
                     vrDisplay: this._device
                 });
             }
+        },
+
+        exitFullscreen: function () {
+
         }
     };
 
@@ -101,7 +105,13 @@ pc.extend(pc.input, function () {
     Object.defineProperty(Hmd.prototype, 'rotation', {
         get: function() {
             if (this._sensor) {
-                var ori = this._vrstate.orientation;
+                var ori;
+                if (this._vrstate.hasOrientation) {
+                    ori = this._vrstate.orientation;
+                } else {
+                    ori = pc.Vec4.ZERO;
+                }
+
                 this._rotation.set(ori.x, ori.y, ori.z, ori.w);
             }
             return this._rotation;
@@ -117,7 +127,12 @@ pc.extend(pc.input, function () {
     Object.defineProperty(Hmd.prototype, 'position', {
         get: function () {
             if (this._sensor) {
-                var pos = this._vrstate.position;
+                var pos;
+                if (this._vrstate.hasPosition) {
+                    pos = this._vrstate.position;
+                } else {
+                    pos = pc.Vec3.ZERO;
+                }
                 this._position.set(pos.x, pos.y, pos.z);
             }
 
