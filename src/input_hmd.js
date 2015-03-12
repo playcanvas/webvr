@@ -37,6 +37,12 @@ pc.extend(pc.input, function () {
                             }
                             if (devices[i] instanceof PositionSensorVRDevice) {
                                 self._sensor = devices[i];
+                                if(self._sensor.resetSensor) {
+                                    self._sensor.resetSensor();
+                                }
+                                if (self._sensor.zeroSensor) {
+                                    self._sensor.zeroSensor();
+                                }
                             }
                         }
 

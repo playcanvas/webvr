@@ -59,6 +59,8 @@ pc.script.create("vr_camera", function (context) {
         this.offsetRotation = new pc.Quat();
         this._separation = 0;
 
+        this.inVR = false;
+
         // left camera (entity this script is attached to)
         this.left = this.entity;
         // right camera (new entity created by this script)
@@ -84,14 +86,10 @@ pc.script.create("vr_camera", function (context) {
 
         hmdInitialize: function () {
             this._separation = this.hmd._device.getEyeTranslation("left").x - this.hmd._device.getEyeTranslation("right").x;
-
-            // context.mouse.on("mousedown", function () {
-            //     this.enterVR();
-            // }.bind(this));
         },
 
         enterVR: function () {
-            if (!document.mozFullscreenElement && !document.fullscreenElement) {
+            if (true) {
                 var onFSChange = function () {
                     if (!document.mozFullScreenElement && !document.fullscreenElement ) {
                         this.leaveVR();
@@ -119,16 +117,7 @@ pc.script.create("vr_camera", function (context) {
                 this.left.camera.projection = pc.PROJECTION_VR;
                 this.left.camera.camera._vrFov = this.hmd._device.getRecommendedEyeFieldOfView("left");
 
-                // if (this.left.camera && this.right.camera) {
-                //     var rfov = this.hmd._device.getRecommendedEyeFieldOfView("right");
-                //     var lfov = this.hmd._device.getRecommendedEyeFieldOfView("left")
-
-                //     // this.fieldOfViewToProjectionMatrix(this.left.camera.camera._projMat.data, lfov, this.left.camera.nearClip, this.left.camera.farClip);
-                //     // this.fieldOfViewToProjectionMatrix(this.right.camera.camera._projMat.data, rfov, this.right.camera.nearClip, this.right.camera.farClip);
-                //     // this.right.camera.camera._projMatDirty = false;
-                //     // this.right.camera.camera._projMatDirty = false;
-                // }
-
+                this.inVR = true;
             }
         },
 
@@ -142,6 +131,8 @@ pc.script.create("vr_camera", function (context) {
             // set left/right viewport
             this.left.camera.rect = new pc.Vec4(0, 0, 1, 1);
             this.left.camera.projection = pc.PROJECTION_PERSPECTIVE;
+
+            this.inVR = false;
         },
 
         update: function () {
@@ -153,9 +144,10 @@ pc.script.create("vr_camera", function (context) {
                 this.hmd.poll();
             }
 
-            if (this.enabled && this.hmd) {
-                this.left.getParent().getRotation();
+            if (this.enabled && this.hmd && this.inVR) {
+                // this.left.getParent().setLocalEulerAngles(0,0,0);
 
+                // console.log(this.hmd.rotation);
 
                 // get rotation from hmd
                 this.left.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
@@ -169,8 +161,8 @@ pc.script.create("vr_camera", function (context) {
                 var lt = this.hmd._device.getEyeTranslation("left");
                 var rt = this.hmd._device.getEyeTranslation("right");
 
-                this.left.setLocalPosition(x + lt.x, y, z);
-                this.right.setLocalPosition(x + rt.x, y, z);
+                this.left.setLocalPosition(x + lt.x, 1 + y, z);
+                this.right.setLocalPosition(x + rt.x, 1 + y, z);
 
 
             } else {
