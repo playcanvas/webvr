@@ -5,7 +5,6 @@ pc.extend(pc.input, function () {
     * @param graphicsDevice The graphics device
     */
     var Hmd = function (graphicsDevice) {
-
         this._graphicsDevice = graphicsDevice;
         this._vrstate = null;
 
@@ -20,52 +19,42 @@ pc.extend(pc.input, function () {
         /*
         * @name pc.input.Hmd#initialize
         * @description Initialize the Hmd object
-        * @returns {pc.promise.Promise} Promise that is resolved when the HMD is ready to use
         */
-        initialize: function () {
+        initialize: function (fn) {
             var self = this;
-            var p = null;
 
-            p = new pc.promise.Promise(function (resolve, reject) {
-                if (navigator.getVRDevices || navigator.mozGetVRDevices) {
-                    var enumerateVRDevices = function (devices) {
-                        var i, n;
-
-                        for(i = 0, n = devices.length; i < n; i++) {
-                            if (devices[i] instanceof HMDVRDevice) {
-                                self._device = devices[i];
-                            }
-                            if (devices[i] instanceof PositionSensorVRDevice) {
-                                self._sensor = devices[i];
-                                if(self._sensor.resetSensor) {
-                                    self._sensor.resetSensor();
-                                }
-                                if (self._sensor.zeroSensor) {
-                                    self._sensor.zeroSensor();
-                                }
-                            }
+            if (navigator.getVRDevices || navigator.mozGetVRDevices) {
+                var enumerateVRDevices = function (devices) {
+                    for(var i = 0; i < devices.length; i++) {
+                        if (devices[i] instanceof HMDVRDevice)
+                            self._device = devices[i];
+                        
+                        if (devices[i] instanceof PositionSensorVRDevice) {
+                            self._sensor = devices[i];
+                            
+                            if(self._sensor.resetSensor)
+                                self._sensor.resetSensor();
+                            
+                            if (self._sensor.zeroSensor)
+                                self._sensor.zeroSensor();
                         }
-
-                        if (!self._device || !self._sensor) {
-                            reject("No HMD or HMD position sensor");
-                        }
-
-                        self.loaded = true;
-                        resolve();
-                    };
-
-                    if (navigator.getVRDevices) {
-                        navigator.getVRDevices().then(enumerateVRDevices);
-                    } else if (navigator.mozGetVRDevices) {
-                        navigator.mozGetVRDevices(enumerateVRDevices);
                     }
 
-                } else {
-                    reject("No HMD found")
-                }
-            });
+                    if (! self._device || ! self._sensor)
+                        return fn(new Error('No HMD or HMD position sensor'));
 
-            return p;
+                    self.loaded = true;
+                    fn(null);
+                };
+
+                if (navigator.getVRDevices) {
+                    navigator.getVRDevices().then(enumerateVRDevices);
+                } else if (navigator.mozGetVRDevices) {
+                    navigator.mozGetVRDevices(enumerateVRDevices);
+                }
+            } else {
+                fn(new Error('No HMD found'));
+            }
         },
 
         /**
@@ -96,10 +85,6 @@ pc.extend(pc.input, function () {
                     vrDisplay: this._device
                 });
             }
-        },
-
-        exitFullscreen: function () {
-
         }
     };
 
@@ -149,5 +134,5 @@ pc.extend(pc.input, function () {
 
     return {
         Hmd: Hmd
-    }
+    };
 }());
