@@ -66,6 +66,7 @@ pc.script.create("vr_camera", function (context) {
         this.left = this.entity;
         // right camera (new entity created by this script)
         this.right = new pc.fw.Entity();
+        this.right.enabled = false;
         // Add the new right camera to the parent
         this.left.getParent().addChild(this.right);
 
@@ -85,6 +86,9 @@ pc.script.create("vr_camera", function (context) {
         },
 
         enterVR: function () {
+            if (this.inVR)
+                return;
+            
             var onFSChange = function () {
                 if (!document.mozFullScreenElement && !document.fullscreenElement)
                     this.leaveVR();
@@ -95,31 +99,34 @@ pc.script.create("vr_camera", function (context) {
             document.addEventListener( "fullscreenchange", onFSChange, false);
 
             // using old format for the moment until Seemore updated
-            if (!this.right.camera) {
+            if (! this.right.camera) {
                 context.systems.camera.addComponent(this.right, {
                     clearColor: this.left.camera.clearColor,
-                    rect: new pc.Vec4(0.5, 0, 0.5, 1),
-                    projection: pc.PROJECTION_VR
+                    rect: new pc.Vec4(0.5, 0, 0.5, 1)
                 });
-                // hack to store VR FOV on camera object
-                this.right.camera.camera._vrFov = this.hmd._device.getEyeParameters("right").recommendedFieldOfView;
             }
-            this.right.camera.enabled = true;
-
-            // set left camera to VR mode
-            this.left.camera.rect = new pc.Vec4(0, 0, 0.5, 1);
-            this.left.camera.projection = pc.PROJECTION_VR;
-            this.left.camera.camera._vrFov = this.hmd._device.getEyeParameters("left").recommendedFieldOfView;
-
-            this.inVR = true;
+            
+            if (this.hmd._device) {
+                this.right.enabled = true;
+                this.right.camera.projection = pc.PROJECTION_VR;
+                this.right.camera.camera._vrFov = this.hmd._device.getEyeParameters("right").recommendedFieldOfView;
+                
+                this.left.camera.projection = pc.PROJECTION_VR;
+                this.left.camera.camera._vrFov = this.hmd._device.getEyeParameters("left").recommendedFieldOfView;
+                this.left.camera.rect = new pc.Vec4(0, 0, 0.5, 1);
+            }
+            
+            if (this.hmd._device)
+                this.inVR = true;
         },
 
         leaveVR: function () {
-            this.hmd.exitFullscreen();
-
+            if (! this.inVR)
+                return;
+            
             // using old format for the moment until Seemore updated
             // context.systems.camera.removeComponent(this.right);
-            this.right.camera.enabled = false;
+            this.right.enabled = false;
 
             // set left/right viewport
             this.left.camera.rect = new pc.Vec4(0, 0, 1, 1);
