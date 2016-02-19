@@ -14,11 +14,6 @@ Currently this requires a special build of [Chrome](https://drive.google.com/fol
 2. On the Entity with your Camera Component add `vr_camera.js`
 3. Call `enterVR` method of a `vr_camera.js` script on user action
 
-## Example
+## Known Issues
 
-See the [Halloween VR](http://playcanvas.com/dave/halloween-vr) example
-
-## KNOWN ISSUES
-
-- Not sure separation and FOV is handled entirely correctly
-- We don't currently handle input from another device (e.g. mouse) and HMD
+- Currently WebVR is a moving target, so APIs are changing often. If you encounter problems incorporating this into your PlayCanvas project please contact us on [the forums](http://forum.playcanvas.com).
