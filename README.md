@@ -1,12 +1,6 @@
 # WebVR Support for PlayCanvas
 
-This project contains the files you'll need to convert your PlayCanvas game to run using the Oculus VR.
-This is very experimental code created as proof of concept and is a subject to change.
-Tested with Oculus Rift DK2
-
-## Requirements
-
-Currently this requires a special build of [Chrome](https://drive.google.com/folderview?id=0BzudLt22BqGRbW9WTHMtOWMzNjQ&usp=sharing#list) or [Firefox](http://mozvr.com/downloads/)
+This project contains a plugin for the PlayCanvas engine that allows you to create VR experiences across many platforms. Including Cardboard VR for mobile devices and Oculus Rift + HTC Vive Headsets*.
 
 ## How to use
 
@@ -17,3 +11,5 @@ Currently this requires a special build of [Chrome](https://drive.google.com/fol
 ## Known Issues
 
 - Currently WebVR is a moving target, so APIs are changing often. If you encounter problems incorporating this into your PlayCanvas project please contact us on [the forums](http://forum.playcanvas.com).
+
+* Oculus and Vive support is experimental and requires a special build of [Chrome](https://drive.google.com/folderview?id=0BzudLt22BqGRbW9WTHMtOWMzNjQ&usp=sharing#list) or [Firefox](http://mozvr.com/downloads/)
