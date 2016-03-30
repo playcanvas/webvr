@@ -1,10 +1,16 @@
-pc.script.create("vr_camera", function (context) {
+pc.script.attribute("enableOnClick", "boolean", true);
+pc.script.attribute("alwaysAcceptInput", "boolean", true);
+pc.script.attribute("useFullscreen", "boolean", true);
+
+pc.script.create("vrCamera", function (app) {
     var q = new pc.Quat();
+    var offset = new pc.Vec3();
 
     pc.PROJECTION_VR = 2;
 
     // Create projection matrix from VRFieldOfView object
     var fieldOfViewToProjectionMatrix = function (out, fov, zNear, zFar) {
+        fov = fov || {upDegrees: 53.09438672063491, rightDegrees: 46.63209544498114, downDegrees: 53.09438672063491, leftDegrees: 47.527693754615306};
         var upTan = Math.tan(fov.upDegrees * Math.PI/180.0);
         var downTan = Math.tan(fov.downDegrees * Math.PI/180.0);
         var leftTan = Math.tan(fov.leftDegrees * Math.PI/180.0);
@@ -52,126 +58,180 @@ pc.script.create("vr_camera", function (context) {
 
     var VrCamera = function (entity) {
         var self = this;
-        
+
         this.entity = entity;
 
-        this.ready = false;
-        this.enabled = true;
+        this.originRotation = new pc.Quat();
+//         this.offset = new pc.Vec3(); // hmd position offset
+        this.offsetScale = 1;
+        this.origin = new pc.Vec3();
 
-        this.offsetRotation = new pc.Quat();
+        this.inVr = false;
 
-        this.inVR = false;
+        // if available inherit the clear color from the existing camera
+        var clearColor;
+        if (this.entity.camera) {
+            clearColor = this.entity.camera.clearColor;
+        } else {
+            clearColor = new pc.Color(0.1, 0.1, 0.1);
+        }
 
-        // left camera (entity this script is attached to)
-        this.left = this.entity;
-        // right camera (new entity created by this script)
+        // left camera
+        this.left = new pc.fw.Entity();
+        this.entity.addChild(this.left);
+        this.left.addComponent("camera", {
+            clearColor: clearColor,
+            rect: new pc.Vec4(0.0, 0, 0.5, 1)
+        });
+        this.left.camera.projection = pc.PROJECTION_VR;
+        this.left.enabled = false;
+
+        // right camera
         this.right = new pc.fw.Entity();
+        this.entity.addChild(this.right);
+        this.right.addComponent("camera", {
+            clearColor: clearColor,
+            rect: new pc.Vec4(0.5, 0, 0.5, 1)
+        });
+        this.right.camera.projection = pc.PROJECTION_VR;
         this.right.enabled = false;
-        // Add the new right camera to the parent
-        this.left.getParent().addChild(this.right);
 
-        this.hmd = new pc.input.Hmd(context.graphicsDevice);
-        this.hmd.initialize(function (err) {
-            if (err)
-                return console.warn("Failed to initialize HMD");
-            
-            self.ready = true;
+//         for debugging
+//         var sphere = new pc.Entity();
+//         sphere.setLocalScale(0.01,0.01,0.01);
+//         sphere.rotate(-90,0,0);
+//         sphere.addComponent("model", {type: "cone"});
+
+//         this.left.addChild(sphere.clone());
+//         this.right.addChild(sphere.clone());
+
+        var hmd = new pc.Hmd(app.graphicsDevice);
+        hmd.initialize(function (err, hmd) {
+            if (err) {
+                console.warn("Failed to initialize HMD");
+                return;
+            }
+
+            self.hmd = hmd;
+
+            if (hmd.sensor) {
+                app.fire("vr:ready", hmd.device, hmd.sensor);
+            } else {
+                app.fire("vr:missing");
+            }
+
+            if (self.enableOnClick) {
+                app.mouse.on("mouseup", self.enterVr, self);
+
+                if (app.touch) {
+                    app.touch.on("touchend", function (e) {
+                        self.enterVr();
+                        e.event.preventDefault();
+                    }, self);
+                }
+            }
         });
     };
 
     VrCamera.prototype = {
         initialize: function () {
-            if (!this.left.camera)
-                console.error("VR Camera must be attached to a camera.");
+            this.origin = this.entity.getLocalPosition().clone();
+            this.originRotation = this.entity.getLocalRotation().clone();
         },
 
-        enterVR: function () {
-            if (this.inVR)
+        enterVr: function () {
+            if (this.inVr)
                 return;
-            
-            var onFSChange = function () {
-                if (!document.mozFullScreenElement && !document.fullscreenElement)
-                    this.leaveVR();
-            }.bind(this);
 
-            this.hmd.enterFullscreen();
+            if (this.useFullscreen) {
+                var onFSChange = function () {
+                    if (!document.mozFullScreenElement && !document.fullscreenElement)
+                        this.leaveVr();
+                }.bind(this);
 
-            document.addEventListener( "fullscreenchange", onFSChange, false);
+                document.addEventListener( "fullscreenchange", onFSChange, false);
 
-            // using old format for the moment until Seemore updated
-            if (! this.right.camera) {
-                context.systems.camera.addComponent(this.right, {
-                    clearColor: this.left.camera.clearColor,
-                    rect: new pc.Vec4(0.5, 0, 0.5, 1)
-                });
+                this.hmd.enterFullscreen();
+
             }
-            
-            if (this.hmd._device) {
-                this.right.enabled = true;
+
+            if (this.hmd.stereo) {
+                this.entity.camera.enabled = false;
+
                 this.right.camera.projection = pc.PROJECTION_VR;
-                this.right.camera.camera._vrFov = this.hmd._device.getEyeParameters("right").recommendedFieldOfView;
-                
+                this.right.camera.camera._vrFov = this.hmd.device.getEyeParameters("right").recommendedFieldOfView;
+                this.right.enabled = true;
+
                 this.left.camera.projection = pc.PROJECTION_VR;
-                this.left.camera.camera._vrFov = this.hmd._device.getEyeParameters("left").recommendedFieldOfView;
-                this.left.camera.rect = new pc.Vec4(0, 0, 0.5, 1);
+                this.left.camera.camera._vrFov = this.hmd.device.getEyeParameters("left").recommendedFieldOfView;
+                this.left.enabled = true;
+
+                this.inVr = true;
+                app.fire("vr:enter");
             }
-            
-            if (this.hmd._device)
-                this.inVR = true;
+
         },
 
-        leaveVR: function () {
-            if (! this.inVR)
+        leaveVr: function () {
+            if (! this.inVr)
                 return;
-            
-            // using old format for the moment until Seemore updated
-            // context.systems.camera.removeComponent(this.right);
+
             this.right.enabled = false;
+            this.left.enabled = false;
 
-            // set left/right viewport
-            this.left.camera.rect = new pc.Vec4(0, 0, 1, 1);
-            this.left.camera.projection = pc.PROJECTION_PERSPECTIVE;
+            if (this.entity.camera)
+                this.entity.camera.enabled = true;
 
-            this.inVR = false;
+            this.inVr = false;
+
+            app.fire("vr:leave");
         },
 
         update: function () {
-            if (!this.ready)
+            if (!this.hmd)
                 return;
 
-            if (this.hmd)
-                this.hmd.poll();
+            this.hmd.poll();
 
-            if (this.enabled && this.hmd && this.inVR) {
-                // get rotation from hmd
-                this.left.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
-                this.right.setLocalRotation(q.copy(this.offsetRotation).mul(this.hmd.rotation));
+            if (this.inVr || this.alwaysAcceptInput) {
+                this.entity.setLocalRotation(q.copy(this.originRotation).mul(this.hmd.rotation));
 
-                var x = this.hmd.position.x;
-                var y = this.hmd.position.y;
-                var z = this.hmd.position.z;
+                offset.copy(this.hmd.position).scale(this.offsetScale);
+                this.originRotation.transformVector(offset, offset);
+                var p = offset.add(this.origin);
 
-                // get position from hmd, include left and right eye offset
-                var lt = this.hmd._device.getEyeParameters("left").eyeTranslation;
-                var rt = this.hmd._device.getEyeParameters("right").eyeTranslation;
+                this.entity.setLocalPosition(p);
 
-                this.left.setLocalPosition(x + lt.x, y + lt.y, z + lt.z);
-                this.right.setLocalPosition(x + rt.x, y + rt.y, z + rt.z);
-            } else {
-                this.right.setLocalRotation(this.left.getLocalRotation());
+                if (this.hmd.stereo) {
+                    // get position from hmd, include left and right eye offset
+                    var lt = this.hmd.device.getEyeParameters("left").eyeTranslation;
+                    var rt = this.hmd.device.getEyeParameters("right").eyeTranslation;
+
+                    this.left.setLocalPosition(lt.x, lt.y, lt.z);
+                    this.right.setLocalPosition(rt.x, rt.y, rt.z);
+                }
             }
         },
 
-        setRotationOffset: function (x, y, z) {
-            this.offsetRotation.setFromEulerAngles(x, y, z);
+        activate: function () {
+            this.right.enabled = true;
+            this.left.enabled = true;
         },
 
-        enable: function () {
-            this.enabled = true;
+        reset: function () {
+            this.hmd.reset();
         },
 
-        disable: function () {
-            this.enabled = false;
+        setOriginRotation: function (x, y, z) {
+            this.originRotation.setFromEulerAngles(x, y, z);
+        },
+
+        setOffsetScale: function (scale) {
+            this.offsetScale = scale;
+        },
+
+        setOrigin: function (x, y, z) {
+            this.origin.set(x, y, z);
         }
     };
 
