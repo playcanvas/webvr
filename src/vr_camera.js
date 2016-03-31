@@ -152,7 +152,6 @@ pc.script.create("vrCamera", function (app) {
                 document.addEventListener( "fullscreenchange", onFSChange, false);
 
                 this.hmd.enterFullscreen();
-
             }
 
             if (this.hmd.stereo) {
