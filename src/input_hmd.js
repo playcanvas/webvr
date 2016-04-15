@@ -79,10 +79,13 @@ pc.extend(pc, function () {
         */
         enterFullscreen: function () {
             var el = document.body;
-//            var el = this._graphicsDevice.canvas;
 
             // watchout for camelcase weirdness
-            if (el.webkitRequestFullscreen) {
+            if (el.requestFullscreen) {
+                el.requestFullscreen({
+                    vrDisplay: this.device
+                });
+            } else if (el.webkitRequestFullscreen) {
                 el.webkitRequestFullscreen({
                     vrDisplay: this.device
                 });
