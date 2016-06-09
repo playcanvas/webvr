@@ -1,6 +1,5 @@
 pc.script.attribute("enableOnClick", "boolean", true);
 pc.script.attribute("alwaysAcceptInput", "boolean", true);
-pc.script.attribute("useFullscreen", "boolean", true);
 
 pc.script.create("vrCamera", function (app) {
     var q = new pc.Quat();
@@ -10,7 +9,6 @@ pc.script.create("vrCamera", function (app) {
 
     // Create projection matrix from VRFieldOfView object
     var fieldOfViewToProjectionMatrix = function (out, fov, zNear, zFar) {
-        fov = fov || {upDegrees: 53.09438672063491, rightDegrees: 46.63209544498114, downDegrees: 53.09438672063491, leftDegrees: 47.527693754615306};
         var upTan = Math.tan(fov.upDegrees * Math.PI/180.0);
         var downTan = Math.tan(fov.downDegrees * Math.PI/180.0);
         var leftTan = Math.tan(fov.leftDegrees * Math.PI/180.0);
@@ -62,7 +60,6 @@ pc.script.create("vrCamera", function (app) {
         this.entity = entity;
 
         this.originRotation = new pc.Quat();
-//         this.offset = new pc.Vec3(); // hmd position offset
         this.offsetScale = 1;
         this.origin = new pc.Vec3();
 
@@ -105,7 +102,7 @@ pc.script.create("vrCamera", function (app) {
 //         this.left.addChild(sphere.clone());
 //         this.right.addChild(sphere.clone());
 
-        var hmd = new pc.Hmd(app.graphicsDevice);
+        var hmd = new pc.Hmd(app);
         hmd.initialize(function (err, hmd) {
             if (err) {
                 console.warn("Failed to initialize HMD");
@@ -114,8 +111,8 @@ pc.script.create("vrCamera", function (app) {
 
             self.hmd = hmd;
 
-            if (hmd.sensor) {
-                app.fire("vr:ready", hmd.device, hmd.sensor);
+            if (hmd.display) {
+                app.fire("vr:ready", hmd);
             } else {
                 app.fire("vr:missing");
             }
@@ -140,50 +137,59 @@ pc.script.create("vrCamera", function (app) {
         },
 
         enterVr: function () {
-            if (this.inVr)
+            if (this.inVr || !this.hmd)
                 return;
 
-            if (this.useFullscreen) {
-                var onFSChange = function () {
-                    if (!document.mozFullScreenElement && !document.fullscreenElement)
-                        this.leaveVr();
-                }.bind(this);
+            var self = this;
+            this.hmd.requestPresent(function (err) {
+                if (err) {
+                    // this device can't present
+                    return;
+                }
 
-                document.addEventListener( "fullscreenchange", onFSChange, false);
+                if (self.hmd.stereo) {
+                    self.entity.camera.enabled = false;
 
-                this.hmd.enterFullscreen();
-            }
+                    self.right.camera.projection = pc.PROJECTION_VR;
+                    self.right.camera.camera._vrFov = self.hmd.rightFov;
+                    self.right.enabled = true;
 
-            if (this.hmd.stereo) {
-                this.entity.camera.enabled = false;
+                    self.left.camera.projection = pc.PROJECTION_VR;
+                    self.left.camera.camera._vrFov = self.hmd.leftFov;
+                    self.left.enabled = true;
 
-                this.right.camera.projection = pc.PROJECTION_VR;
-                this.right.camera.camera._vrFov = this.hmd.device.getEyeParameters("right").recommendedFieldOfView;
-                this.right.enabled = true;
+                    self.inVr = true;                  
+                }
 
-                this.left.camera.projection = pc.PROJECTION_VR;
-                this.left.camera.camera._vrFov = this.hmd.device.getEyeParameters("left").recommendedFieldOfView;
-                this.left.enabled = true;
-
-                this.inVr = true;
                 app.fire("vr:enter");
-            }
-
+            });
         },
 
         leaveVr: function () {
-            if (! this.inVr)
+            if (!this.inVr || !this.hmd)
                 return;
 
+            var self = this;
+            this.hmd.exitPresent(function (err) {
+                if (err) {
+                    return;
+                }
+                self._onLeave();
+            });
+
+        },
+
+        _onLeave: function () {
             this.right.enabled = false;
             this.left.enabled = false;
 
-            if (this.entity.camera)
+            if (this.entity.camera) {
                 this.entity.camera.enabled = true;
+            }
 
             this.inVr = false;
 
-            app.fire("vr:leave");
+            app.fire("vr:leave");   
         },
 
         update: function () {
@@ -203,11 +209,11 @@ pc.script.create("vrCamera", function (app) {
 
                 if (this.hmd.stereo) {
                     // get position from hmd, include left and right eye offset
-                    var lt = this.hmd.device.getEyeParameters("left").eyeTranslation;
-                    var rt = this.hmd.device.getEyeParameters("right").eyeTranslation;
+                   var lt = this.hmd.leftOffset;
+                   var rt = this.hmd.rightOffset;
 
-                    this.left.setLocalPosition(lt.x, lt.y, lt.z);
-                    this.right.setLocalPosition(rt.x, rt.y, rt.z);
+                   this.left.setLocalPosition(lt.x, lt.y, lt.z);
+                   this.right.setLocalPosition(rt.x, rt.y, rt.z);
                 }
             }
         },

@@ -4,7 +4,7 @@ The project contains scripts to run your PlayCanvas application in VR using eith
 
 ## Requirements
 
-For Oculus and Vive support you this requires a special builds [Chrome and Firefox](http://mozvr.com/#start)
+For Cardboard VR any modern mobile device should work. For Oculus and Vive support you require a special build of [Chromium](http://webvr.info/).
 
 ## How to use
 
@@ -18,12 +18,12 @@ VrCamera has a few options that are exposed on the entity in the Editor.
 
 * enableOnClick - If disabled you must manually call `enterVr()` on the camera script to start VR rendering
 * alwaysAcceptInput - If enabled HMD position tracking will be applied to the camera even if the camera is no "in VR".
-* useFullscreen - If disabled the camera will not request to go fullscreen when VR mode is enabled
 
 ## Known Issues
 
-- Currently WebVR is a moving target, so APIs are changing often. This library does not implement the new 1.0 spec, though it be upgradable with no breaking changes. If you encounter problems incorporating this into your PlayCanvas project please contact us on [the forums](http://forum.playcanvas.com).
+- Currently WebVR is a moving target, so APIs are changing often. This library now implements the WebVR 1.0 Spec. 
+- Please raise an issue on this project if you encounter problems
 
 ## Attribution
 
-input_hmd.js contains an modified version of the WebVR Polyfill by Boris Smus. [Modified Version](https://github.com/playcanvas/webvr-polyfill/). [Original Version](https://github.com/borismus/webvr-polyfill).
+input_hmd.js contains a version of the [WebVR Polyfill](https://github.com/borismus/webvr-polyfill) by Boris Smus. 

@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="https://code.playcanvas.com/playcanvas-stable.js"></script>
+        <script src="../../src/input_hmd.js"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;            
+            }
+
+            #ui {
+                position: absolute;
+                top: 5px;
+                left: 5px;
+            }
+
+            button {
+                width: 200px;
+                height: 60px;
+            }
+
+        </style>
+
+        <script>
+        WebVRConfig = {
+          // Flag to disabled the UI in VR Mode.
+          CARDBOARD_UI_DISABLED: true, // Default: false
+
+          // Forces availability of VR mode, even for non-mobile devices.
+          FORCE_ENABLE_VR: false, // Default: false.
+
+          // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
+          K_FILTER: 0.98, // Default: 0.98.
+
+          // Flag to disable the instructions to rotate your device.
+          ROTATE_INSTRUCTIONS_DISABLED: false, // Default: false.
+
+          // How far into the future to predict during fast motion (in seconds).
+          PREDICTION_TIME_S: 0.040, // Default: 0.040.
+
+          // Flag to disable touch panner. In case you have your own touch controls.
+          TOUCH_PANNER_DISABLED: false, // Default: false.
+
+          // Enable yaw panning only, disabling roll and pitch. This can be useful
+          // for panoramas with nothing interesting above or below.
+          YAW_ONLY: false, // Default: false.
+
+          // To disable keyboard and mouse controls, if you want to use your own
+          // implementation.
+          MOUSE_KEYBOARD_CONTROLS_DISABLED: true, // Default: false.
+
+          // Prevent the polyfill from initializing immediately. Requires the app
+          // to call InitializeWebVRPolyfill() before it can be used.
+          DEFER_INITIALIZATION: false, // Default: false.
+
+          // Enable the deprecated version of the API (navigator.getVRDevices).
+          ENABLE_DEPRECATED_API: false, // Default: false.
+
+          // Scales the recommended buffer size reported by WebVR, which can improve
+          // performance.
+          BUFFER_SCALE: 1.0, // Default: 1.0.
+
+          // Allow VRDisplay.submitFrame to change gl bindings, which is more
+          // efficient if the application code will re-bind its resources on the
+          // next frame anyway. This has been seen to cause rendering glitches with
+          // THREE.js.
+          // Dirty bindings include: gl.FRAMEBUFFER_BINDING, gl.CURRENT_PROGRAM,
+          // gl.ARRAY_BUFFER_BINDING, gl.ELEMENT_ARRAY_BUFFER_BINDING,
+          // and gl.TEXTURE_BINDING_2D for texture unit 0.
+          DIRTY_SUBMIT_FRAME_BINDINGS: false // Default: false.
+        }
+    </script>
+    </head>
+
+    <body>
+        <canvas id="application-canvas"></canvas>
+        <div id="ui">
+            <button id="reset">Reset</button>
+            <button id="enter">Go VR</button>
+        </div>
+        <script>
+            var canvas = document.getElementById("application-canvas");
+            var app = new pc.Application(canvas, {
+                mouse: new pc.Mouse(document.body),
+                keyboard: new pc.Keyboard(window)
+            });
+            app.start();
+
+            var material = new pc.StandardMaterial();
+            material.emissive.set(1,1,1);
+
+            app.loader.load('../../src/vr_camera.js', "script", function (err, script) {
+                var cam = new pc.Entity();
+                cam.addComponent("camera", {
+                    clearColor: new pc.Color(0.2, 0.2, 0.2)
+                });
+                app.root.addChild(cam);
+                cam.addComponent("script", {
+                    scripts: [{
+                        name: "vrCamera",
+                        url: "../../src/vr_camera.js"
+                    }]
+                });
+                cam.script.vrCamera.enableOnClick = false;
+                cam.script.vrCamera.alwaysAcceptInput = true;
+                cam.script.vrCamera.useFullscreen = true;
+
+                function addCube(x, y, z) {
+                    var cube = new pc.Entity();
+                    cube.addComponent("model", {
+                        type: "box"
+                    });
+                    app.root.addChild(cube);
+                    cube.translate(x, y, z);
+                    cube.model.material = material;
+                }
+
+                for (var x = -30; x <= 30; x+=5) {
+                    for (var y = -30; y <= 30; y+=5) {
+                        for (var z = -30; z <= 30; z+=5) {
+                            addCube(x, y, z);
+                        }
+                    }
+                }
+
+                var light = new pc.Entity();
+                light.addComponent("light", {
+                    type: "spot",
+                    color: new pc.Color(1,0,0),
+                });
+                app.root.addChild(light);
+                light.translate(0, 3, 0);
+                light.rotate(45, 0,0);
+
+                document.getElementById('enter').addEventListener('click', function (event) {
+                    if (!cam.script.vrCamera.inVr) {
+                        cam.script.vrCamera.enterVr();
+                        event.target.textContent = "Exit";                        
+                    } else {
+                        cam.script.vrCamera.leaveVr();
+                        event.target.textContent = "Go VR";
+                    }
+                });
+                document.getElementById('reset').addEventListener('click', function () {
+                    cam.script.vrCamera.reset();
+                });
+            });
+        </script>
+    </body>
+
+</html>
