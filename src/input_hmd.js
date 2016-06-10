@@ -25,6 +25,8 @@ pc.extend(pc, function () {
 
         this._originalWidth = 0;
         this._originalHeight = 0;
+
+        pc.events.attach(this);
     };
 
     Hmd.prototype = {
@@ -94,13 +96,17 @@ pc.extend(pc, function () {
         },
 
         _onRequestPresentChange: function () {
-            if (this.display && this.display.isPresenting) {
+            var presenting = (this.display && this.display.isPresenting);
+
+            if (presenting) {
                 this._onResize();
             } else {
                 this._app.tick = this._app._oldTick;
                 this._app._oldTick = undefined;
                 this._onResize();
             }
+
+            this.fire("presentchange", presenting);
         },
 
         _onResize: function () {
