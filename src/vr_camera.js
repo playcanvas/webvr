@@ -128,6 +128,8 @@ pc.script.create("vrCamera", function (app) {
                 }
             }
         });
+
+        hmd.on("presentchange", this._onPresentChange, this);
     };
 
     VrCamera.prototype = {
@@ -158,7 +160,7 @@ pc.script.create("vrCamera", function (app) {
                     self.left.camera.camera._vrFov = self.hmd.leftFov;
                     self.left.enabled = true;
 
-                    self.inVr = true;                  
+                    self.inVr = true;
                 }
 
                 app.fire("vr:enter");
@@ -167,7 +169,7 @@ pc.script.create("vrCamera", function (app) {
 
         leaveVr: function () {
             if (!this.inVr || !this.hmd)
-                return;
+                 return;
 
             var self = this;
             this.hmd.exitPresent(function (err) {
@@ -189,7 +191,14 @@ pc.script.create("vrCamera", function (app) {
 
             this.inVr = false;
 
-            app.fire("vr:leave");   
+            app.fire("vr:leave");
+        },
+
+        _onPresentChange: function (presenting) {
+            // an external event has caused presenting to finish.
+            if (!presenting) {
+                this._onLeave();
+            }
         },
 
         update: function () {
