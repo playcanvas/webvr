@@ -201,6 +201,13 @@ pc.script.create("vrCamera", function (app) {
             }
         },
 
+        _onPresentChange: function (presenting) {
+            // an external event has caused presenting to finish.
+            if (!presenting) {
+                this._onLeave();
+            }
+        },
+
         update: function () {
             if (!this.hmd)
                 return;
