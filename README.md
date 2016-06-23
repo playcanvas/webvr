@@ -8,8 +8,8 @@ For Cardboard VR any modern mobile device should work. For Oculus and Vive suppo
 
 ## How to use
 
-1. Add `input_hmd.js` into your Script Priorities to load it before the application starts.
-2. On the Entity you wish to be your camera add `vr_camera.js`.
+1. Make sure `input_hmd.js` loads first, which can be changed in Editor Settings "Scripts Loading Order".
+2. On the Entity you wish to be your camera add `vrCamera` to script component.
 3. By default `vrCamera` will start the VR mode when you click or tap the canvas.
 
 ## Options
@@ -21,9 +21,9 @@ VrCamera has a few options that are exposed on the entity in the Editor.
 
 ## Known Issues
 
-- Currently WebVR is a moving target, so APIs are changing often. This library now implements the WebVR 1.0 Spec. 
+- Currently WebVR is a moving target, so APIs are changing often. This library now implements the WebVR 1.0 Spec.
 - Please raise an issue on this project if you encounter problems
 
 ## Attribution
 
-input_hmd.js contains a version of the [WebVR Polyfill](https://github.com/borismus/webvr-polyfill) by Boris Smus. 
+input_hmd.js contains a version of the [WebVR Polyfill](https://github.com/borismus/webvr-polyfill) by Boris Smus.
