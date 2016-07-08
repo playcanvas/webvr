@@ -4,7 +4,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <script src="https://code.playcanvas.com/playcanvas-stable.js"></script>
+        <script src="../../../engine/build/output/playcanvas-latest.js"></script>
+
+        <!-- <script src="https://code.playcanvas.com/playcanvas-stable.js"></script> -->
         <script src="../../src/input_hmd.js"></script>
         <style>
             body {
@@ -27,7 +29,7 @@
                 top: 0;
                 left: 0;
                 right: 0;
-                bottom: 0;            
+                bottom: 0;
 */            }
 
             #ui {
@@ -49,7 +51,7 @@
           CARDBOARD_UI_DISABLED: true, // Default: false
 
           // Forces availability of VR mode, even for non-mobile devices.
-          FORCE_ENABLE_VR: true, // Default: false.
+          FORCE_ENABLE_VR: false, // Default: false.
 
           // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
           K_FILTER: 0.98, // Default: 0.98.
@@ -61,7 +63,7 @@
           PREDICTION_TIME_S: 0.040, // Default: 0.040.
 
           // Flag to disable touch panner. In case you have your own touch controls.
-          TOUCH_PANNER_DISABLED: true, // Default: false.
+          TOUCH_PANNER_DISABLED: false, // Default: false.
 
           // Enable yaw panning only, disabling roll and pitch. This can be useful
           // for panoramas with nothing interesting above or below.
@@ -101,6 +103,7 @@
             <button id="enter">Go VR</button>
         </div>
         <script>
+            pc.script.legacy = false;
             var canvas = document.getElementById("application-canvas");
             var app = new pc.Application(canvas, {
                 mouse: new pc.Mouse(document.body),
@@ -119,18 +122,12 @@
                     clearColor: new pc.Color(0.2, 0.2, 0.2)
                 });
                 app.root.addChild(cam);
-                cam.addComponent("script", {
-                    scripts: [{
-                        name: "vrCamera",
-                        url: "../../src/vr_camera.js",
-                        attributes: [{
-                            name: "enableOnClick",
-                            value: false
-                        }, {
-                            name: "alwaysAcceptInput",
-                            value: true
-                        }]
-                    }]
+                cam.addComponent("script", {enabled: true});
+                cam.script.create("vrCamera", {
+                    attributes: {
+                        enableOnClick: false,
+                        alwaysAcceptInput: true
+                    }
                 });
 
                 function addCube(x, y, z) {
@@ -164,7 +161,7 @@
                 document.getElementById('enter').addEventListener('click', function (event) {
                     if (!cam.script.vrCamera.inVr) {
                         cam.script.vrCamera.enterVr();
-                        event.target.textContent = "Exit";                        
+                        event.target.textContent = "Exit";
                     } else {
                         cam.script.vrCamera.leaveVr();
                         event.target.textContent = "Go VR";
