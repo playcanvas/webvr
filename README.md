@@ -1,4 +1,11 @@
-# WebVR Support for PlayCanvas
+# Important: Deprecated
+This project is now deprecated. WebVR support for PlayCanvas is now built directly into the engine. For more information see the developer documentation: http://developer.playcanvas.com/en/user-manual/vr/
+
+This repository is kept for legacy reasons and should not be used in new projects.
+
+---
+
+## WebVR Support for PlayCanvas
 
 The project contains scripts to run your PlayCanvas application in VR using either a Google Cardboard-style VR headset or (when using special builds of Chrome & Firefox) Oculus Rift and HTC Vive.
 
