@@ -1,6 +1,6 @@
 # DEPRECATED
 
-**This project is now deprecated. WebVR support for PlayCanvas is now built directly into the engine. For more information see the developer documentation: https://developer.playcanvas.com/en/user-manual/xr/**
+**This project is now deprecated. WebXR support for PlayCanvas is now built directly into the engine. For more information see the developer documentation: https://developer.playcanvas.com/en/user-manual/xr/**
 
 **This repository is kept for legacy reasons and should not be used in new projects.**
 
